@@ -4,6 +4,8 @@ A Maven plugin that generates a small Java file with some revision info from git
 info from your git repository inside your app. This makes it possible to trace a build back to the exact revision and
 state the repository was in when the build was made.
 
+An example of the output:
+
 ```java
 public final class Version {
   public static final String BRANCH = "master";
@@ -51,7 +53,7 @@ the static fields of the class directly into your code.
 
  * It is not recommended to commit this file to your SCM.
  * If you build your code directly in your IDE it will probably not directly execute maven, but rather just copy
-   configuration. In that case you need to make sure that the `git-java` goal runs before the build/make step of your
+   configuration. In that case you need to make sure that the `verionsing-maven-plugin:git-java` goal runs before the build/make step of your
    IDE.
 
 ## Bugs, Contributions and Feedback
