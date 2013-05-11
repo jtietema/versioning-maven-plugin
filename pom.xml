@@ -46,6 +46,11 @@
         <url>https://github.com/jtietema/versioning-maven-plugin</url>
     </scm>
 
+    <issueManagement>
+        <system>Github Issues</system>
+        <url>https://github.com/jtietema/versioning-maven-plugin/issues</url>
+    </issueManagement>
+
     <distributionManagement>
         <snapshotRepository>
             <id>sonatype-nexus-snapshots</id>
