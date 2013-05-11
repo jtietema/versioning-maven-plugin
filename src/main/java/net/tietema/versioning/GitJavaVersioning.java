@@ -1,7 +1,7 @@
-package net.tietema.androidversioning;
+package net.tietema.versioning;
 
 /*
- * Copyright 2001-2005 The Apache Software Foundation.
+ * Copyright 2013 Jeroen Tietema
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,9 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.Status;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.RepositoryState;
@@ -43,25 +44,30 @@ import java.util.Locale;
 @Mojo(name = "git-java", defaultPhase = LifecyclePhase.PROCESS_SOURCES)
 public class GitJavaVersioning extends AbstractMojo {
     /**
-     * Location of the file.
+     * The base directory of the project. Should only be changed if you have an exotic project layout.
      */
     @Parameter(defaultValue = "${project.basedir}", required = true, readonly = true)
     private File outputDirectory;
 
+    /**
+     * Java package name.
+     */
     @Parameter(required = true)
     private String packageName;
 
+    /**
+     * The classname of the output file
+     */
     @Parameter(required = true)
     private String className;
 
+    /**
+     * Your sources directory. Defaults to maven default (src/main/java)
+     */
     @Parameter(defaultValue = "src/main/java", required = true)
     private String sourcesDir;
 
     private Log log;
-
-    @Parameter(defaultValue = "${project}", required = true, readonly = true)
-    private MavenProject project;
-
 
     public void execute() throws MojoExecutionException {
         File f = outputDirectory;
@@ -94,7 +100,8 @@ public class GitJavaVersioning extends AbstractMojo {
         }
     }
 
-    public String getRevision(File projectDir) {
+    public String getRevision(File projectDir) throws MojoExecutionException {
+        // XXX we use our own findGitDir because they JGit one doesn't find the git dir in a multi project build
         File gitDir = findGitDir(projectDir);
         String revision = "Unknown";
         if (gitDir == null) return revision;
@@ -119,27 +126,41 @@ public class GitJavaVersioning extends AbstractMojo {
             ObjectId id = repository.resolve(fullBranch);
             log.info("Branch " + repository.getBranch() + " points to " + id.name());
 
-            // TODO: add dirty state here
+            Status status = git.status().call();
+            boolean strictClean = status.isClean();
+            // no untracked files
+            boolean loseClean = status.getAdded().isEmpty()
+                    && status.getChanged().isEmpty()
+                    && status.getConflicting().isEmpty()
+                    && status.getMissing().isEmpty()
+                    && status.getModified().isEmpty()
+                    && status.getRemoved().isEmpty();
 
-            //revision = String.format(Locale.US, "%s-%s\n", branch, id.name().substring(0,8));
-            StringWriter buffer = new StringWriter();
+                    StringWriter buffer = new StringWriter();
             JavaWriter writer = new JavaWriter(buffer);
             writer.emitPackage(packageName)
                     .beginType(packageName + "." + className, "class", Modifier.PUBLIC | Modifier.FINAL)
-                    .emitField("String", "BRANCH", Modifier.PUBLIC | Modifier.FINAL | Modifier.STATIC, String.format(Locale.US, "\"%s\"", branch))
-                            .emitField("String", "REVISION", Modifier.PUBLIC | Modifier.FINAL | Modifier.STATIC, String.format(Locale.US, "\"%s\"", id.name()))
-                            .emitField("String", "REVISION_SHORT", Modifier.PUBLIC | Modifier.FINAL | Modifier.STATIC, String.format(Locale.US, "\"%s\"", id.name().substring(0, 8)))
-                            .endType();
+                    .emitField("String",  "BRANCH", Modifier.PUBLIC | Modifier.FINAL | Modifier.STATIC, String.format(Locale.US, "\"%s\"", branch))
+                    .emitField("String",  "REVISION", Modifier.PUBLIC | Modifier.FINAL | Modifier.STATIC, String.format(Locale.US, "\"%s\"", id.name()))
+                    .emitField("String",  "REVISION_SHORT", Modifier.PUBLIC | Modifier.FINAL | Modifier.STATIC, String.format(Locale.US, "\"%s\"", id.name().substring(0, 8)))
+                    .emitJavadoc("Strict Clean means no changes, not even untracked files")
+                    .emitField("boolean", "STRICT_CLEAN", Modifier.PUBLIC | Modifier.FINAL | Modifier.STATIC, (strictClean ? "true" : "false"))
+                    .emitJavadoc("Lose Clean means no changes except untracked files.")
+                    .emitField("boolean", "LOSE_CLEAN", Modifier.PUBLIC | Modifier.FINAL | Modifier.STATIC, (loseClean ? "true" : "false"))
+                    .endType();
             revision = buffer.toString();
 
             return revision;
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error(e);
+            throw new MojoExecutionException(e.getMessage());
+        } catch (GitAPIException e) {
+            log.error(e);
+            throw new MojoExecutionException(e.getMessage());
         } finally {
             if (repository != null)
                 repository.close();
         }
-        return revision;
     }
 
     private File findGitDir(File dir) {
