@@ -27,23 +27,23 @@ public final class Version {
 Add the following to you <build><plugins> section of your pom file.
 
 ```xml
-            <plugin>
-                <groupId>net.tietema.versioning</groupId>
-                <artifactId>versioning-maven-plugin</artifactId>
-                <version>1.0</version>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>git-java</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <packageName>com.example</packageName>
-                    <className>VersionInfo</className>
-                </configuration>
-            </plugin>
+<plugin>
+    <groupId>net.tietema.versioning</groupId>
+    <artifactId>versioning-maven-plugin</artifactId>
+    <version>1.0</version>
+    <executions>
+        <execution>
+            <phase>generate-sources</phase>
+            <goals>
+                <goal>git-java</goal>
+            </goals>
+        </execution>
+    </executions>
+    <configuration>
+        <packageName>com.example</packageName>
+        <className>VersionInfo</className>
+    </configuration>
+</plugin>
 ```
 
 The plugin will the run before each maven compile and generate an up to date version of the file. You can then reference
