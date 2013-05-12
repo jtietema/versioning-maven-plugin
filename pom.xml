@@ -42,7 +42,7 @@
 
     <scm>
         <connection>scm:git:git://github.com/jtietema/versioning-maven-plugin.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com:jtietema/versioning-maven-plugin.git</developerConnection>
+        <developerConnection>scm:git:git@github.com:jtietema/versioning-maven-plugin.git</developerConnection>
         <url>https://github.com/jtietema/versioning-maven-plugin</url>
     </scm>
 
@@ -126,7 +126,7 @@
                 <artifactId>maven-plugin-plugin</artifactId>
                 <version>3.2</version>
                 <configuration>
-                    <goalPrefix>versioning-maven-plugin</goalPrefix>
+                    <goalPrefix>versioning</goalPrefix>
                     <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
                 </configuration>
                 <executions>
@@ -178,4 +178,33 @@
             </extension>
         </extensions>
     </build>
+    <profiles>
+        <profile>
+            <id>release-sign-artifacts</id>
+            <activation>
+                <property>
+                    <name>performRelease</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.4</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
