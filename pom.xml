@@ -19,7 +19,7 @@
 
     <groupId>net.tietema.versioning</groupId>
     <artifactId>versioning-maven-plugin</artifactId>
-    <version>1.0</version>
+    <version>1.1-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <name>Versioning Maven Plugin</name>
